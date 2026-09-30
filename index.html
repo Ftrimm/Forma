@@ -274,7 +274,7 @@ h2{margin:0;font-size:19px;font-weight:600}
 .link.danger{color:var(--danger)}
 
 /* tab bar */
-nav.tabs{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));
+nav.tabs{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));
   width:calc(100% - 28px);max-width:492px;height:64px;border-radius:32px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;z-index:20}
 nav.tabs button{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:10px;height:100%;justify-content:center}
 nav.tabs button.on{color:var(--accent)}
@@ -379,7 +379,7 @@ details>summary::-webkit-details-marker{display:none}
 <script>
 (() => {
 "use strict";
-const APP_VERSION = "2.1 · 01.10, 00:00";
+const APP_VERSION = "2.2 · 01.10, 00:10";
 const THEMES = {
   forest:   { t: "Лес",      acc: "#8FB39E", rgb: "143,179,158", hi: "190,225,205", b: ["#1D3329", "#243A30", "#18291F"], bg: "#0C0F0E", sh: "22,28,25" },
   graphite: { t: "Графит",   acc: "#B9BFC7", rgb: "185,191,199", hi: "222,226,232", b: ["#25282D", "#2C3036", "#1E2126"], bg: "#0D0E10", sh: "24,26,29" },
@@ -1462,16 +1462,25 @@ function backupSheet() {
 // ---------- sheet ----------
 const sheetWrap = $("#sheetWrap"), sheet = $("#sheet");
 let sheetTok = 0, pendingAsk = null;
-// iOS: в режиме «на экран Домой» окно иногда короче экрана на высоту статус-бара — компенсируем
-(() => {
-  const fix = () => {
-    if (!(navigator.standalone || (window.matchMedia && matchMedia("(display-mode: standalone)").matches))) return;
-    const sw = screen.width, sh = screen.height, portrait = window.innerHeight >= window.innerWidth;
-    const full = portrait ? Math.max(sw, sh) : Math.min(sw, sh);
-    const g = Math.round(full - window.innerHeight);
+// iOS: у приложения с экрана «Домой» область fixed-элементов иногда короче экрана (на коротких страницах),
+// а иногда нет (на длинных). Меряем фактический низ этой области и компенсируем разницу — всегда заново.
+const measureGap = (() => {
+  let probe = null, raf = 0;
+  const run = () => {
+    raf = 0;
+    const standalone = navigator.standalone || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
+    if (!standalone) { document.documentElement.style.setProperty("--gap", "0px"); return; }
+    if (!probe) { probe = document.createElement("div"); probe.setAttribute("aria-hidden", "true"); probe.style.cssText = "position:fixed;left:0;bottom:0;width:1px;height:1px;pointer-events:none;visibility:hidden"; document.body.appendChild(probe); }
+    const portrait = window.innerHeight >= window.innerWidth;
+    const full = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
+    const g = Math.round(full - probe.getBoundingClientRect().bottom);
     document.documentElement.style.setProperty("--gap", (g > 0 && g < 90 ? g : 0) + "px");
   };
-  fix(); window.addEventListener("resize", fix); window.addEventListener("orientationchange", () => setTimeout(fix, 300));
+  const schedule = () => { if (!raf) raf = requestAnimationFrame(run); };
+  window.addEventListener("resize", schedule); window.addEventListener("scroll", schedule, { passive: true });
+  window.addEventListener("orientationchange", () => setTimeout(schedule, 300));
+  document.addEventListener("visibilitychange", schedule);
+  return () => { schedule(); setTimeout(schedule, 120); setTimeout(schedule, 450); };
 })();
 let lockY = 0, locked = false;
 function lockScroll() { if (locked) return; locked = true; lockY = window.scrollY; const b = document.body.style; b.position = "fixed"; b.top = -lockY + "px"; b.left = "0"; b.right = "0"; b.width = "100%"; }
@@ -1875,6 +1884,7 @@ render = function () {
   if (animDir && !matchMedia("(prefers-reduced-motion: reduce)").matches) { app.classList.remove("view-in-r", "view-in-l"); void app.offsetWidth; app.classList.add(animDir); }
   animDir = "";
   if (S.active && !minimized) renderWorkout(); else $("#wk").innerHTML = "";
+  measureGap();
 };
 A.resume = () => { minimized = false; wkAnim = true; render(); };
 A.wkMin = () => { readDraft(); save(); minimized = true; render(); };
