@@ -292,6 +292,7 @@ details>summary::-webkit-details-marker{display:none}
 <script>
 (() => {
 "use strict";
+const APP_VERSION = "1.6 · 30.09, 21:40";
 // ---------- utils ----------
 const $ = (s, r = document) => r.querySelector(s);
 const h = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -608,6 +609,7 @@ function onboardingView() {
     <div class="card solid" id="obForm">${profileForm()}</div>
     <p class="small danger" id="obErr" hidden>Проверь дату рождения, рост и вес.</p>
     <button class="btn block" data-a="obSave">Посчитать норму</button>
+    <button class="link" style="align-self:center" data-a="obSkip">Пропустить, заполню позже</button>
   </div>`;
 }
 
@@ -682,6 +684,7 @@ function todayView() {
     <button class="icon-btn glass" data-a="profile" aria-label="Профиль">${ICON.user}</button></div>
   <div class="head"><div><div class="sub">${dateLong(today)}</div><h1>Сегодня</h1></div></div>
   <div class="stack" id="homeList">
+    ${S.profile.placeholder ? `<div class="card glass between"><div class="stack" style="gap:3px"><h2 style="font-size:17px">Заполни профиль</h2><div class="small">Чтобы норма калорий считалась под тебя</div></div><button class="btn small" data-a="profile">Заполнить</button></div>` : ""}
     ${banner}
     ${secs.map(id => `<div class="hs-live" data-sec="${id}">${homeSection(id, ctx)}</div>`).join("")}
     ${!secs.length ? `<div class="empty">Добавь разделы кнопкой слева вверху</div>` : ""}
@@ -1178,7 +1181,8 @@ function profileSheet() {
       <div class="small">Вес ${f1(n.w)} кг, возраст ${n.a}. Базовый обмен ${f0(n.bmr)} ккал (${isFinite(n.km) ? "Кетч — МакАрдл; по Миффлину было бы " + f0(n.mif) : "Миффлин — Сан-Жеор"}), × ${n.act.k} активность = ${f0(n.tdee)}, цель «${n.goal.t}» ${n.goal.a ? (n.goal.a > 0 ? "+" : "−") + Math.abs(n.goal.a * 100) + "%" : ""}${p.manualKcal ? ". Калории заданы вручную" : ""}.</div>
     </div>
     <h2 style="margin-top:8px">Профиль</h2>
-    <div id="pfForm">${profileForm({ ...p, weight: f1(currentWeight()) })}</div>
+    ${p.placeholder ? `<div class="small warn">Профиль ещё не заполнен — норма сейчас примерная.</div>` : ""}
+    <div id="pfForm">${profileForm(p.placeholder ? null : { ...p, weight: f1(currentWeight()) })}</div>
     <details><summary>Настроить норму вручную</summary><div class="stack" style="margin-top:10px">
     <label class="field">Свои калории (пусто — считать автоматически)<input class="input num" id="manK" inputmode="numeric" value="${p.manualKcal || ""}"></label>
     <div class="grid2"><label class="field">Белок, г на кг<input class="input num" id="protK" inputmode="decimal" value="${f1(p.protPerKg || 2)}"></label>
@@ -1189,6 +1193,7 @@ function profileSheet() {
     <div class="small">Данные ${storeMode === "db" ? "сохраняются в твоём аккаунте Claude" : storeMode === "local" ? "хранятся в этом браузере" : "не сохраняются между запусками"}. Можно скопировать всё в текст и вставить обратно.</div>
     <div class="row"><button class="btn ghost small" data-a="export">Скопировать данные</button><button class="btn ghost small" data-a="import">Вставить данные</button></div>
     <button class="link danger" style="align-self:center;margin-top:8px" data-a="resetAll">Стереть всё</button></div></details>
+    <div class="small" style="text-align:center;opacity:.6;margin-top:6px">Forma, версия ${APP_VERSION}</div>
   </div>`;
 }
 
@@ -1353,12 +1358,18 @@ const A = {
   },
   close: () => closeSheet(),
   seg: (d, el) => { const root = el.closest(".stack"); root.querySelector(`[name="${d.name}"]`).value = d.v; el.parentElement.querySelectorAll("button").forEach(b => b.classList.toggle("on", b === el)); },
+  obSkip: () => {
+    S.profile = { sex: "m", birth: "2000-01-01", height: 175, weight: 70, fat: null, act: 2, goal: "keep", protPerKg: 2, fatPerKg: 0.9, placeholder: true };
+    S.since = dkey(); save(); render(); toast("Профиль можно заполнить позже");
+  },
   obSave: () => { const p = readProfile($("#obForm")); if (!p) { $("#obErr").hidden = false; return; }
     S.profile = { sex: p.sex, birth: p.birth, height: p.height, fat: p.fat, act: p.act, goal: p.goal, weight: p.weight, protPerKg: 2, fatPerKg: 0.9 };
     S.weights.push({ d: dkey(), w: p.weight }); S.since = dkey(); save(); render(); A.profile(); },
   profile: () => openSheet(profileSheet()),
   pfSave: () => { const p = readProfile($("#pfForm")); if (!p) { $("#pfErr").hidden = false; return; }
-    const cur = S.profile; Object.assign(cur, { sex: p.sex, birth: p.birth, height: p.height, fat: p.fat, act: p.act, goal: p.goal });
+    const cur = S.profile; const wasPh = cur.placeholder; delete cur.placeholder;
+    Object.assign(cur, { sex: p.sex, birth: p.birth, height: p.height, fat: p.fat, act: p.act, goal: p.goal, weight: p.weight });
+    if (wasPh) { S.weights = S.weights.filter(w => w.d !== dkey()); S.weights.push({ d: dkey(), w: p.weight }); }
     const mk = parseInt($("#manK").value, 10); cur.manualKcal = mk > 800 ? mk : null;
     const pk = num($("#protK").value), fk = num($("#fatK").value); if (pk >= 1 && pk <= 3.5) cur.protPerKg = pk; if (fk >= 0.5 && fk <= 2) cur.fatPerKg = fk;
     if (Math.abs(p.weight - currentWeight()) > 0.05) { S.weights = S.weights.filter(w => w.d !== dkey()); S.weights.push({ d: dkey(), w: p.weight }); }
