@@ -96,6 +96,39 @@ body.rotated #app > .stack > *:nth-child(n+6){animation-delay:.2s}
 .gal-prev{pointer-events:none;overflow:hidden;border-radius:20px}
 .gal-scale{transform-origin:top left}
 @media (prefers-reduced-motion: reduce){.hs,.hs-in{animation:none}}
+.gchips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -18px;padding:2px 18px}
+.gchips::-webkit-scrollbar{display:none}
+.gchips.wrap{flex-wrap:wrap;overflow:visible;margin:0;padding:0}
+.gchip{flex:none;height:34px;padding:0 14px;border-radius:17px;font-size:14px;color:var(--muted);
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.12);transition:background-color .2s,color .2s,transform .14s}
+.gchip:active{transform:scale(.95)}
+.gchip.on{color:var(--text);background:rgba(143,179,158,.28);border-color:rgba(190,225,205,.3)}
+.glabel{font-size:12px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin:4px 4px 6px}
+.glabel span{opacity:.6;margin-left:4px}
+.gtags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.gtags span{font-size:11px;color:var(--muted);padding:2px 8px;border-radius:9px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07)}
+.ava{display:block;border-radius:50%;object-fit:cover;flex:none}
+.ava-ph{display:flex;align-items:center;justify-content:center;font-weight:600;letter-spacing:.5px;color:var(--text);
+  background:radial-gradient(120% 120% at 30% 20%,rgba(143,179,158,.55),rgba(29,51,41,.9));border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.2)}
+.ava-ph svg{width:45%;height:45%}
+.icon-btn.has-ava{padding:0;overflow:hidden}
+.icon-btn .ava{width:100%!important;height:100%!important}
+.phero{display:flex;flex-direction:column;align-items:center;gap:14px;padding:4px 0 8px}
+.ava-edit{position:relative;border-radius:50%;padding:3px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);box-shadow:0 10px 30px rgba(0,0,0,.35);transition:transform .14s}
+.ava-edit:active{transform:scale(.96)}
+.ava-cam{position:absolute;right:0;bottom:2px;width:30px;height:30px;border-radius:15px;display:flex;align-items:center;justify-content:center;
+  background:rgba(143,179,158,.5);border:1px solid rgba(200,235,215,.45);color:var(--text);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.pname{font-size:22px;font-weight:700;letter-spacing:-.2px}
+.pstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;border-radius:20px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08)}
+.pstats>div{display:flex;flex-direction:column;align-items:center;padding:12px 4px;gap:2px}
+.pstats>div+div{border-left:1px solid var(--div)}
+.pstats b{font-size:20px}
+.pstats span{font-size:11px;color:var(--muted);text-align:center}
+.switch{width:50px;height:30px;border-radius:15px;position:relative;flex:none;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);transition:background-color .25s}
+.switch i{position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:12px;background:#F3EFE6;box-shadow:0 2px 6px rgba(0,0,0,.35);transition:transform .3s cubic-bezier(.34,1.4,.64,1)}
+.switch.on{background:rgba(143,179,158,.55)}
+.switch.on i{transform:translateX(20px)}
+.chip.danger{color:var(--danger)}
 .toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:80;height:40px;padding:0 18px;border-radius:20px;display:flex;align-items:center;font-size:14px;font-weight:500;white-space:nowrap}
 .toast.show{animation:toastIn .3s cubic-bezier(.34,1.4,.64,1)}
 @keyframes toastIn{from{opacity:0;transform:translate(-50%,-12px) scale(.95)}to{opacity:1;transform:translate(-50%,0)}}
@@ -292,7 +325,7 @@ details>summary::-webkit-details-marker{display:none}
 <script>
 (() => {
 "use strict";
-const APP_VERSION = "1.6 · 30.09, 21:40";
+const APP_VERSION = "1.9 · 30.09, 23:00";
 // ---------- utils ----------
 const $ = (s, r = document) => r.querySelector(s);
 const h = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -333,6 +366,27 @@ const ICON = {
 };
 
 // ---------- seed ----------
+const GROUPS = [["chest", "Грудь"], ["back", "Спина"], ["legs", "Ноги"], ["shoulders", "Плечи"], ["arms", "Руки"], ["core", "Пресс"], ["other", "Другое"]];
+const GNAME = Object.fromEntries(GROUPS);
+const EX_GROUP = {
+  "Становая тяга": "back", "Приседания со штангой": "legs", "Жим лёжа": "chest", "Жим гантелей лёжа": "chest", "Жим в хаммере": "chest",
+  "Жим гантели одной рукой": "chest", "Жим над головой": "shoulders", "Жим гантелей сидя": "shoulders", "Тяга верхнего блока": "back",
+  "Подтягивания": "back", "Тяга штанги в наклоне": "back", "Тяга гантели одной рукой": "back", "Разведения гантелей в стороны": "shoulders",
+  "Румынская тяга": "legs", "Выпады": "legs", "Жим ногами": "legs", "Подъём на бицепс": "arms", "Молотки": "arms", "Французский жим": "arms",
+  "Разгибания на блоке": "arms", "Отжимания на брусьях": "chest", "Скручивания": "core",
+  "Бабочка": "chest", "Жим на наклонной скамье": "chest", "Шраги": "back", "Гиперэкстензия": "back", "Тяга к лицу": "shoulders",
+  "Разведения в наклоне": "shoulders", "Разгибания ног": "legs", "Сгибания ног": "legs", "Подъёмы на носки": "legs", "Болгарские выпады": "legs",
+  "Концентрированный подъём на бицепс": "arms", "Разгибания из-за головы": "arms", "Сгибания запястий": "arms", "Планка": "core", "Подъёмы ног в висе": "core"
+};
+const EXTRA_EX = [["Бабочка", 0], ["Жим на наклонной скамье", 0], ["Шраги", 0], ["Гиперэкстензия", 0], ["Тяга к лицу", 0], ["Разведения в наклоне", 0],
+  ["Разгибания ног", 0], ["Сгибания ног", 0], ["Подъёмы на носки", 0], ["Болгарские выпады", 1], ["Концентрированный подъём на бицепс", 1],
+  ["Разгибания из-за головы", 0], ["Сгибания запястий", 0], ["Планка", 0], ["Подъёмы ног в висе", 0]];
+const exGroup = e => (e && e.g) || EX_GROUP[e && e.name] || "other";
+function groupsOf(ids) { const seen = []; ids.forEach(id => { const g = exGroup(exById(id)); if (!seen.includes(g)) seen.push(g); }); return GROUPS.filter(([k]) => seen.includes(k)).map(([, t]) => t); }
+function exOptions(sel, ids) {
+  const list = (ids ? ids.map(exById).filter(Boolean) : S.exercises);
+  return GROUPS.map(([k, t]) => { const xs = list.filter(e => exGroup(e) === k).sort((a, b) => a.name.localeCompare(b.name, "ru")); return xs.length ? `<optgroup label="${t}">${xs.map(e => `<option value="${e.id}" ${e.id === sel ? "selected" : ""}>${h(e.name)}</option>`).join("")}</optgroup>` : ""; }).join("");
+}
 const SEED_EX = [
   ["Становая тяга", 0], ["Приседания со штангой", 0], ["Жим лёжа", 0], ["Жим гантелей лёжа", 0], ["Жим в хаммере", 0],
   ["Жим гантели одной рукой", 1], ["Жим над головой", 0], ["Жим гантелей сидя", 0], ["Тяга верхнего блока", 0], ["Подтягивания", 0],
@@ -348,7 +402,7 @@ const SEED_FOOD = [
   ["Протеин (сывороточный)", 380, 75, 6, 8], ["Масло оливковое", 898, 0, 99.8, 0], ["Яблоко", 47, 0.4, 0.4, 9.8]
 ];
 function seed() {
-  const ex = SEED_EX.map(([name, uni]) => ({ id: uid(), name, uni: !!uni }));
+  const ex = [...SEED_EX, ...EXTRA_EX].map(([name, uni]) => ({ id: uid(), name, uni: !!uni, g: EX_GROUP[name] || "other" }));
   return {
     v: 1, profile: null,
     exercises: ex,
@@ -381,17 +435,30 @@ async function load() {
       }
     }
   } catch (e) { dbDoc = null; }
-  try { const raw = localStorage.getItem("forma"); storeMode = "local"; if (raw) return JSON.parse(raw); } catch (e) { storeMode = "memory"; }
+  try {
+    storeMode = "local";
+    for (const key of ["forma", "forma-backup"]) { const raw = localStorage.getItem(key); if (raw) { try { return JSON.parse(raw); } catch (e) {} } }
+  } catch (e) { storeMode = "memory"; }
   return null;
 }
+function saveLocalNow() {
+  if (!S) return;
+  try { const json = JSON.stringify(S); localStorage.setItem("forma", json); localStorage.setItem("forma-backup", json); } catch (e) {}
+}
 function save() {
+  // сразу в память телефона — чтобы ничего не терялось, даже если приложение тут же закрыли
+  if (!dbDoc) saveLocalNow();
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
-    const json = JSON.stringify(S);
-    if (dbDoc) { try { await dbDoc.set({ json }); return; } catch (e) {} }
-    try { localStorage.setItem("forma", json); } catch (e) {}
-  }, 600);
+    if (dbDoc) { try { await dbDoc.set({ json: JSON.stringify(S) }); return; } catch (e) {} }
+    saveLocalNow();
+  }, 400);
 }
+// при сворачивании/закрытии — дописать всё немедленно
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") { clearTimeout(saveTimer); if (dbDoc) { try { dbDoc.set({ json: JSON.stringify(S) }); } catch (e) {} } else saveLocalNow(); } });
+window.addEventListener("pagehide", () => { if (!dbDoc) saveLocalNow(); });
+// попросить браузер не очищать данные приложения
+try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
 
 // ---------- calculations ----------
 const ACT = [
@@ -681,7 +748,7 @@ function todayView() {
   return `
   <div class="between" style="margin-bottom:6px">
     <button class="icon-btn glass" data-a="homeEdit" aria-label="Настроить главный экран">${ICON.sliders}</button>
-    <button class="icon-btn glass" data-a="profile" aria-label="Профиль">${ICON.user}</button></div>
+    <button class="icon-btn glass ${S.profile && S.profile.avatar ? "has-ava" : ""}" data-a="profile" aria-label="Профиль">${S.profile && (S.profile.avatar || S.profile.name) ? avatar(44) : ICON.user}</button></div>
   <div class="head"><div><div class="sub">${dateLong(today)}</div><h1>Сегодня</h1></div></div>
   <div class="stack" id="homeList">
     ${S.profile.placeholder ? `<div class="card glass between"><div class="stack" style="gap:3px"><h2 style="font-size:17px">Заполни профиль</h2><div class="small">Чтобы норма калорий считалась под тебя</div></div><button class="btn small" data-a="profile">Заполнить</button></div>` : ""}
@@ -789,7 +856,7 @@ function workoutsView() {
   <div class="stack">
     ${S.active ? `<div class="card glass between"><div class="stack" style="gap:3px"><div class="small">Идёт тренировка</div><h2>${h(S.active.name)}</h2></div><button class="btn" data-a="resume">Продолжить</button></div>` : ""}
     ${S.templates.map(t => `<div class="card solid between">
-      <button style="text-align:left;flex:1;min-width:0" data-a="editTpl" data-id="${t.id}"><h2>${h(t.name)}</h2><div class="small">${t.items.length ? pl(t.items.length, W_EX) : "Пусто — нажми, чтобы наполнить"}</div></button>
+      <button style="text-align:left;flex:1;min-width:0" data-a="editTpl" data-id="${t.id}"><h2>${h(t.name)}</h2><div class="small">${t.items.length ? pl(t.items.length, W_EX) : "Пусто — нажми, чтобы наполнить"}</div>${t.items.length ? `<div class="gtags">${groupsOf(t.items).map(g => `<span>${g}</span>`).join("")}</div>` : ""}</button>
       ${t.items.length && !S.active ? `<button class="btn" data-a="start" data-id="${t.id}">Начать</button>` : ""}
     </div>`).join("")}
     ${hist.length ? `<h2 style="margin-top:10px">Недавние</h2>
@@ -799,14 +866,44 @@ function workoutsView() {
     }).join("")}</div>` : ""}
   </div>`;
 }
+let pickCtx = null, pickG = "all", pickQ = "";
+function exPicker() {
+  const q = pickQ.trim().toLowerCase();
+  const list = S.exercises.filter(e => (q ? true : (pickG === "all" || exGroup(e) === pickG)) && (!q || e.name.toLowerCase().includes(q)));
+  const chips = [["all", "Все"], ...GROUPS.filter(([k]) => S.exercises.some(e => exGroup(e) === k))];
+  const groupsShown = (pickG === "all" || q) ? GROUPS.filter(([k]) => list.some(e => exGroup(e) === k)) : GROUPS.filter(([k]) => k === pickG);
+  return `<div class="stack"><h2>${pickCtx && pickCtx.title || "Выбери упражнение"}</h2>
+    <input class="input" id="pickQ" placeholder="Поиск" value="${h(pickQ)}" autocomplete="off">
+    <div class="gchips" role="tablist">${chips.map(([k, t]) => `<button class="gchip ${pickG === k ? "on" : ""}" data-a="pickG" data-v="${k}" role="tab" aria-selected="${pickG === k}">${t}</button>`).join("")}</div>
+    <div id="pickList">${groupsShown.map(([k, t]) => { const xs = list.filter(e => exGroup(e) === k).sort((a, b) => a.name.localeCompare(b.name, "ru"));
+      return xs.length ? `<div class="glabel">${t}</div><div class="card solid tight" style="margin-bottom:12px">${xs.map(e => `<button class="list-item" style="width:100%;text-align:left" data-a="pickEx" data-id="${e.id}"><span>${h(e.name)}</span><span class="small">${e.uni ? "по одной" : ""}</span></button>`).join("")}</div>` : ""; }).join("") || `<div class="empty">Ничего не нашлось</div>`}</div>
+    <button class="link" style="align-self:center" data-a="exNew">Новое упражнение</button></div>`;
+}
+function openPicker(ctx) { pickCtx = ctx; pickQ = ""; pickG = "all"; openSheet(exPicker()); wirePicker(); }
+function wirePicker() { const q = $("#pickQ"); if (q) q.addEventListener("input", () => { pickQ = q.value; const pos = q.selectionStart; const html = exPicker(); const tmp = document.createElement("div"); tmp.innerHTML = html; $("#pickList").innerHTML = tmp.querySelector("#pickList").innerHTML; }); }
+function exNewSheet() {
+  return `<div class="stack"><h2>Новое упражнение</h2>
+    <label class="field">Название<input class="input" id="exName" placeholder="например, жим Арнольда"></label>
+    <div class="small">Группа мышц</div>
+    <div class="gchips wrap">${GROUPS.map(([k, t], i) => `<button class="gchip ${k === (pickG !== "all" ? pickG : "chest") ? "on" : ""}" data-a="exNewG" data-v="${k}">${t}</button>`).join("")}</div>
+    <label class="row small" style="gap:10px"><input type="checkbox" id="exUni" style="width:20px;height:20px;accent-color:#8FB39E"> Выполняется одной рукой или ногой</label>
+    <p class="err" id="exErr" hidden>Впиши название.</p>
+    <button class="btn block" data-a="exSave">Сохранить</button></div>`;
+}
+function exLibSheet() {
+  return `<div class="stack"><h2>Упражнения</h2>
+    ${GROUPS.map(([k, t]) => { const xs = S.exercises.filter(e => exGroup(e) === k).sort((a, b) => a.name.localeCompare(b.name, "ru"));
+      return xs.length ? `<div><div class="glabel">${t} <span>${xs.length}</span></div><div class="card solid tight">${xs.map(e => `<div class="list-item"><span>${h(e.name)}</span><span class="small">${e.uni ? "по одной" : ""}</span></div>`).join("")}</div></div>` : ""; }).join("")}
+    <button class="btn block" data-a="exNew">${ICON.plus("currentColor")}Новое упражнение</button></div>`;
+}
 function tplSheet(t) {
   return `<div class="stack">
     <label class="field">Название<input class="input" id="tplName" value="${h(t.name)}"></label>
     <div class="small">Упражнения по порядку</div>
-    <div class="card solid tight" id="tplItems">${t.items.length ? t.items.map((id, i) => `<div class="list-item"><span>${i + 1}. ${h(exById(id)?.name)}</span>
+    <div class="card solid tight" id="tplItems">${t.items.length ? t.items.map((id, i) => `<div class="list-item"><div class="stack" style="gap:1px;min-width:0"><span>${i + 1}. ${h(exById(id)?.name)}</span><span class="small">${GNAME[exGroup(exById(id))]}</span></div>
       <div class="row"><button class="icon-btn" style="width:36px;height:36px" data-a="tplUp" data-id="${t.id}" data-i="${i}" aria-label="Выше">↑</button>
       <button class="icon-btn danger" style="width:36px;height:36px" data-a="tplDel" data-id="${t.id}" data-i="${i}" aria-label="Убрать">${ICON.x}</button></div></div>`).join("") : `<div class="empty">Пусто</div>`}</div>
-    <label class="field">Добавить упражнение<select class="input" id="tplAdd"><option value="">Выбери…</option>${S.exercises.map(e => `<option value="${e.id}">${h(e.name)}${e.uni ? " (одной рукой/ногой)" : ""}</option>`).join("")}</select></label>
+    <button class="btn ghost block" data-a="tplPick" data-id="${t.id}">${ICON.plus("currentColor")}Добавить упражнение</button>
     <button class="btn block" data-a="tplSave" data-id="${t.id}">Сохранить</button>
     <button class="link danger" style="align-self:center" data-a="tplRemove" data-id="${t.id}">Удалить шаблон</button>
   </div>`;
@@ -1082,7 +1179,7 @@ function progView() {
     </div>
     <div class="card solid stack" style="gap:10px">
       <h2>Сила</h2>
-      ${usedEx.length ? `<select class="input" id="progExSel">${usedEx.map(id => `<option value="${id}" ${id === progEx ? "selected" : ""}>${h(exById(id).name)}</option>`).join("")}</select>
+      ${usedEx.length ? `<select class="input" id="progExSel">${exOptions(progEx, usedEx)}</select>
         <div class="small">Расчётный разовый максимум (по формуле Эпли), кг</div>${lineChart(exPts, null, "var(--carbs)")}` : `<div class="empty">Появится после первой тренировки</div>`}
     </div>
   </div>`;
@@ -1099,7 +1196,7 @@ function measureSheet() {
 }
 function recordSheet() {
   return `<div class="stack"><h2>Добавить рекорд</h2><div class="small">Например, результат, который был до приложения.</div>
-    <label class="field">Упражнение<select class="input" id="rEx">${S.exercises.map(e => `<option value="${e.id}">${h(e.name)}</option>`).join("")}</select></label>
+    <label class="field">Упражнение<select class="input" id="rEx">${exOptions()}</select></label>
     <div class="grid2"><label class="field">Вес, кг<input class="input num" id="rW" inputmode="decimal"></label><label class="field">Повторы<input class="input num" id="rR" inputmode="numeric" value="1"></label></div>
     <label class="field">Дата<input class="input" type="date" lang="ru" id="rD" value="${dkey()}"></label>
     <p class="err" id="rErr" hidden>Впиши вес и повторы.</p>
@@ -1171,9 +1268,75 @@ function planSheet(k) {
 }
 
 // ---------- profile sheet ----------
+function initials(name) { const w = String(name || "").trim().split(/\s+/).filter(Boolean); return (w.length ? (w[0][0] + (w[1] ? w[1][0] : "")) : "").toUpperCase(); }
+function avatar(size) {
+  const p = S.profile || {};
+  if (p.avatar) return `<img class="ava" src="${p.avatar}" alt="" width="${size}" height="${size}" style="width:${size}px;height:${size}px">`;
+  const ini = initials(p.name);
+  return `<span class="ava ava-ph" style="width:${size}px;height:${size}px;font-size:${Math.round(size * .38)}px">${ini || ICON.user}</span>`;
+}
+function ensureSocial() {
+  const p = S.profile; if (!p) return;
+  if (!p.code) { const al = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; p.code = "FORMA-" + [...Array(4)].map(() => al[Math.floor(Math.random() * al.length)]).join(""); }
+  if (!p.share) p.share = { workouts: true, records: true, weight: false, measures: false };
+  if (!Array.isArray(S.friends)) S.friends = [];
+}
+function profileHero() {
+  ensureSocial();
+  const p = S.profile, days = S.since ? Math.max(1, Math.round((parseD(dkey()) - parseD(S.since)) / 864e5) + 1) : 1;
+  const sw = (k, t) => `<div class="between" style="padding:10px 0;border-bottom:1px solid var(--div)"><span>${t}</span><button class="switch ${p.share[k] ? "on" : ""}" data-a="shareToggle" data-id="${k}" role="switch" aria-checked="${!!p.share[k]}" aria-label="${t}"><i></i></button></div>`;
+  return `
+    <div class="phero">
+      <button class="ava-edit" data-a="avatarPick" aria-label="${p.avatar ? "Сменить фото" : "Поставить фото"}">${avatar(92)}<span class="ava-cam">${ICON.plus("currentColor")}</span></button>
+      <input type="file" accept="image/*" id="avaFile" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" tabindex="-1" aria-hidden="true">
+      <div class="stack" style="gap:2px;align-items:center">
+        <div class="pname">${h(p.name || "Твоё имя")}</div>
+        <div class="small">${p.nick ? "@" + h(p.nick) : "ник не задан"}</div>
+        ${p.bio ? `<div class="sub" style="text-align:center;max-width:32ch;margin-top:4px">${h(p.bio)}</div>` : ""}
+      </div>
+      <div class="pstats">
+        <div><b class="num">${S.sessions.length}</b><span>${plural(S.sessions.length, ["тренировка", "тренировки", "тренировок"])}</span></div>
+        <div><b class="num">${recordsList().length}</b><span>${plural(recordsList().length, ["рекорд", "рекорда", "рекордов"])}</span></div>
+        <div><b class="num">${days}</b><span>${plural(days, ["день", "дня", "дней"])} с Forma</span></div>
+      </div>
+      <button class="btn ghost small" data-a="profEdit">Редактировать профиль</button>
+    </div>
+    <div class="card solid stack" style="gap:12px">
+      <div class="between"><h2>Друзья</h2><span class="pbadge auto">Скоро</span></div>
+      <div class="small">Скоро здесь можно будет добавлять друзей по коду, смотреть их тренировки и рекорды и соревноваться. Твой код уже готов:</div>
+      <div class="between"><span class="num" style="font-size:20px;font-weight:700;letter-spacing:1.5px">${p.code}</span><button class="chip" data-a="copyCode">Скопировать</button></div>
+      <button class="btn ghost block" disabled style="opacity:.45">Найти друзей</button>
+      <details><summary>Что будут видеть друзья</summary><div style="margin-top:4px">
+        ${sw("workouts", "Тренировки")}${sw("records", "Рекорды")}${sw("weight", "Вес")}${sw("measures", "Замеры")}
+        <div class="small" style="padding-top:10px">Сейчас ничего никуда не отправляется — это настройки на будущее.</div></div></details>
+    </div>`;
+}
+function profEditSheet() {
+  const p = S.profile;
+  return `<div class="stack"><h2>Профиль</h2>
+    <div style="align-self:center">${avatar(72)}</div>
+    <div class="row" style="justify-content:center;gap:8px"><button class="chip" data-a="avatarPick">${p.avatar ? "Сменить фото" : "Поставить фото"}</button>${p.avatar ? `<button class="chip danger" data-a="avatarDel">Убрать фото</button>` : ""}</div>
+    <input type="file" accept="image/*" id="avaFile" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" tabindex="-1" aria-hidden="true">
+    <label class="field">Имя<input class="input" id="pfName" value="${h(p.name || "")}" maxlength="40" autocomplete="name"></label>
+    <label class="field">Ник<div style="position:relative"><span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted)">@</span><input class="input" id="pfNick" value="${h(p.nick || "")}" maxlength="20" autocapitalize="off" autocomplete="off" spellcheck="false" style="padding-left:30px"></div></label>
+    <label class="field">О себе<input class="input" id="pfBio" value="${h(p.bio || "")}" maxlength="80" placeholder="например, набираю без жира"></label>
+    <p class="err" id="pfNickErr" hidden>Ник: 3–20 символов, латиница, цифры, точка или подчёркивание.</p>
+    <button class="btn block" data-a="profEditSave">Сохранить</button></div>`;
+}
+async function readAvatar(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    const S0 = 320, c = document.createElement("canvas"); c.width = c.height = S0;
+    const side = Math.min(img.naturalWidth, img.naturalHeight), sx = (img.naturalWidth - side) / 2, sy = (img.naturalHeight - side) / 2;
+    c.getContext("2d").drawImage(img, sx, sy, side, side, 0, 0, S0, S0);
+    return c.toDataURL("image/jpeg", 0.82);
+  } finally { URL.revokeObjectURL(url); }
+}
 function profileSheet() {
   const n = norm(), p = S.profile;
   return `<div class="stack">
+    ${profileHero()}
     <h2>Твоя норма</h2>
     <div class="card glass stack" style="gap:8px">
       <div class="between"><span class="sub">Калории</span><span class="num" style="font-size:24px;font-weight:700">${f0(n.kcal)} ккал</span></div>
@@ -1366,6 +1529,19 @@ const A = {
     S.profile = { sex: p.sex, birth: p.birth, height: p.height, fat: p.fat, act: p.act, goal: p.goal, weight: p.weight, protPerKg: 2, fatPerKg: 0.9 };
     S.weights.push({ d: dkey(), w: p.weight }); S.since = dkey(); save(); render(); A.profile(); },
   profile: () => openSheet(profileSheet()),
+  avatarPick: () => { const f = $("#avaFile"); if (!f) return; const fromEdit = !!$("#pfName"); f.value = "";
+    f.onchange = async () => { const file = f.files && f.files[0]; if (!file) return;
+      try { S.profile.avatar = await readAvatar(file); save(); render(); if (fromEdit) { const nm = $("#pfName").value, nk = $("#pfNick").value, bi = $("#pfBio").value; openSheet(profEditSheet()); $("#pfName").value = nm; $("#pfNick").value = nk; $("#pfBio").value = bi; } else { const y = sheet.scrollTop; openSheet(profileSheet()); sheet.scrollTop = y; } toast("Фото обновлено"); }
+      catch (e) { toast("Не получилось открыть фото"); } };
+    f.click(); },
+  avatarDel: () => { const nm = $("#pfName").value, nk = $("#pfNick").value, bi = $("#pfBio").value; S.profile.avatar = null; save(); render(); openSheet(profEditSheet()); $("#pfName").value = nm; $("#pfNick").value = nk; $("#pfBio").value = bi; },
+  profEdit: () => openSheet(profEditSheet()),
+  profEditSave: () => { const nick = $("#pfNick").value.trim().replace(/^@/, "");
+    if (nick && !/^[a-zA-Z0-9._]{3,20}$/.test(nick)) { $("#pfNickErr").hidden = false; return; }
+    Object.assign(S.profile, { name: $("#pfName").value.trim(), nick: nick.toLowerCase(), bio: $("#pfBio").value.trim() });
+    save(); saved("Профиль сохранён"); },
+  shareToggle: (d, el) => { ensureSocial(); S.profile.share[d.id] = !S.profile.share[d.id]; el.classList.toggle("on", S.profile.share[d.id]); el.setAttribute("aria-checked", S.profile.share[d.id]); save(); },
+  copyCode: async (d, el) => { try { await navigator.clipboard.writeText(S.profile.code); el.textContent = "Скопировано"; } catch (e) { toast(S.profile.code); } },
   pfSave: () => { const p = readProfile($("#pfForm")); if (!p) { $("#pfErr").hidden = false; return; }
     const cur = S.profile; const wasPh = cur.placeholder; delete cur.placeholder;
     Object.assign(cur, { sex: p.sex, birth: p.birth, height: p.height, fat: p.fat, act: p.act, goal: p.goal, weight: p.weight });
@@ -1421,10 +1597,19 @@ const A = {
   tplDel: d => { const t = S.templates.find(x => x.id === d.id); t.items.splice(+d.i, 1); save(); openSheet(tplSheet(t)); },
   tplSave: d => { const t = S.templates.find(x => x.id === d.id); t.name = $("#tplName").value.trim() || t.name; save(); saved("Шаблон сохранён"); },
   tplRemove: d => ask("Удалить шаблон? История тренировок останется.", "Удалить", () => { S.templates = S.templates.filter(t => t.id !== d.id); save(); render(); }),
-  exLib: () => openSheet(`<div class="stack"><h2>Упражнения</h2><div class="card solid tight" style="max-height:44vh;overflow-y:auto">${S.exercises.map(e => `<div class="list-item"><span>${h(e.name)}</span><span class="small">${e.uni ? "одной рукой/ногой" : ""}</span></div>`).join("")}</div>
-    <label class="field">Новое упражнение<input class="input" id="exName"></label><label class="row small" style="gap:8px"><input type="checkbox" id="exUni" style="width:20px;height:20px;accent-color:#8FB39E"> Выполняется одной рукой или ногой</label>
-    <button class="btn block" data-a="exSave">Добавить</button></div>`),
-  exSave: () => { const n = $("#exName").value.trim(); if (!n) return; S.exercises.push({ id: uid(), name: n, uni: $("#exUni").checked }); save(); A.exLib(); },
+  exLib: () => { pickCtx = null; openSheet(exLibSheet()); },
+  exNew: () => { const back = pickCtx; openSheet(exNewSheet()); pickCtx = back; },
+  exNewG: (d, el) => { el.parentElement.querySelectorAll(".gchip").forEach(b => b.classList.toggle("on", b === el)); },
+  exSave: () => { const n = $("#exName").value.trim(); if (!n) { $("#exErr").hidden = false; return; }
+    const g = (sheet.querySelector(".gchip.on") || {}).dataset?.v || "other";
+    const e = { id: uid(), name: n, uni: $("#exUni").checked, g }; S.exercises.push(e); save();
+    if (pickCtx) { A.pickEx({ id: e.id }); } else { toast("Упражнение добавлено"); openSheet(exLibSheet()); } },
+  pickG: d => { pickG = d.v; openSheet(exPicker()); wirePicker(); },
+  pickEx: d => { const c = pickCtx; if (!c) return;
+    if (c.mode === "tpl") { const t = S.templates.find(x => x.id === c.id); if (t) { t.items.push(d.id); save(); openSheet(tplSheet(t)); if (c.name != null) $("#tplName").value = c.name; } }
+    else if (c.mode === "wk" && S.active) { readDraft(); S.active.entries.push({ ex: d.id, sets: [] }); S.active.idx = S.active.entries.length - 1; save(); closeSheet(); renderWorkout(); toast("Упражнение добавлено"); }
+    pickCtx = null; },
+  tplPick: d => openPicker({ mode: "tpl", id: d.id, name: $("#tplName").value, title: "Добавить в шаблон" }),
   schedule: () => { const days = [[1, "Пн"], [2, "Вт"], [3, "Ср"], [4, "Чт"], [5, "Пт"], [6, "Сб"], [0, "Вс"]];
     openSheet(`<div class="stack"><h2>Расписание</h2><div class="small">Дни тренировок</div>
       <div class="row" style="gap:6px;flex-wrap:wrap">${days.map(([v, t]) => `<button class="chip ${S.schedule.days.includes(v) ? "on" : ""}" style="min-width:44px;justify-content:center" data-a="dayToggle" data-v="${v}">${t}</button>`).join("")}</div>
@@ -1464,8 +1649,7 @@ const A = {
   setDel: d => ask("Удалить этот подход?", "Удалить", () => { const e = S.active.entries[S.active.idx]; e.sets.splice(+d.i, 1); save(); renderWorkout(); }),
   rest15: () => { restEnd += 15000; tickRest(); },
   restSkip: () => { restEnd = 0; const r = $("#rest"); if (r) r.hidden = true; clearInterval(restTick); },
-  wkAddEx: () => openSheet(`<div class="stack"><h2>Добавить упражнение</h2><select class="input" id="wkEx">${S.exercises.map(e => `<option value="${e.id}">${h(e.name)}</option>`).join("")}</select><button class="btn block" data-a="wkAddExSave">Добавить</button></div>`),
-  wkAddExSave: () => { readDraft(); const id = $("#wkEx").value; S.active.entries.push({ ex: id, sets: [] }); S.active.idx = S.active.entries.length - 1; save(); closeSheet(); renderWorkout(); },
+  wkAddEx: () => openPicker({ mode: "wk", title: "Добавить упражнение" }),
 
   // food
   day: d => { foodDay = addDays(foodDay, +d.v); if (foodDay > dkey()) foodDay = dkey(); render(); },
@@ -1574,6 +1758,8 @@ A.start = d => { minimized = false; wkAnim = true; startWorkout(d.id); };
   Object.keys(HOME).forEach(k => { if (!S.home.order.includes(k)) S.home.order.push(k); });
   if (!Array.isArray(S.records)) S.records = [];
   if (!Array.isArray(S.plan)) S.plan = [];
+  S.exercises.forEach(e => { if (!e.g) e.g = EX_GROUP[e.name] || "other"; });
+  EXTRA_EX.forEach(([name, uni]) => { if (!S.exercises.some(e => e.name === name)) S.exercises.push({ id: uid(), name, uni: !!uni, g: EX_GROUP[name] }); });
   if (!S.since) { const ds = [...S.weights.map(x => x.d), ...S.sessions.map(x => dkey(new Date(x.start))), ...Object.keys(S.meals)].sort(); S.since = ds[0] || dkey(); }
   const REN = { "Фулбади A": "Фулбади А", "Фулбади B": "Фулбади Б" };
   S.templates.forEach(t => { if (REN[t.name]) t.name = REN[t.name]; });
